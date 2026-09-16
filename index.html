@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Campus Food Menu</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 30px auto;
+      max-width: 700px;
+    }
+    h1 {
+      text-align: center;
+    }
+    .section {
+      margin: 15px 0;
+    }
+    #searchInput {
+      width: 250px;
+      padding: 5px;
+    }
+    button {
+      padding: 5px 12px;
+      cursor: pointer;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    table, th, td {
+      border: 1px solid black;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+    }
+    .count {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Campus Food Menu</h1>
+
+  <div class="section">
+    <button onclick="loadAllMeals()">Load All meals</button>
+  </div>
+
+  <div class="section">
+    <input type="text" id="searchInput" placeholder="Find Meal" onkeydown="if(event.key==='Enter') searchMeal()">
+    <button onclick="searchMeal()">Find Meal</button>
+  </div>
+
+  <div class="count" id="countDisplay">Storing 4 meal(No.)</div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Category</th>
+        <th>Price</th>
+      </tr>
+    </thead>
+    <tbody id="mealTableBody">
+      <!-- Meals will be loaded here -->
+    </tbody>
+  </table>
+
+  <script>
+    const API_BASE = window.location.origin && window.location.origin.startsWith('http') 
+      ? '/api/meals' 
+      : 'http://localhost:3000/api/meals';
+
+    // Function to render meals into the table
+    function renderMeals(meals) {
+      const tbody = document.getElementById('mealTableBody');
+      tbody.innerHTML = '';
+
+      if (meals.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No meals found</td></tr>';
+        return;
+      }
+
+      meals.forEach(meal => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${meal.id}</td>
+          <td>${meal.name}</td>
+          <td>${meal.category}</td>
+          <td>$${Number(meal.price).toFixed(2)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Function to update the count display
+    async function updateCount() {
+      try {
+        const response = await fetch(`${API_BASE}/count`);
+        const data = await response.json();
+        document.getElementById('countDisplay').innerText = `Storing ${data.count} meal(No.)`;
+      } catch (err) {
+        console.error('Error fetching count:', err);
+      }
+    }
+
+    // 1. Retrieve all food
+    async function loadAllMeals() {
+      try {
+        const response = await fetch(API_BASE);
+        const meals = await response.json();
+        renderMeals(meals);
+        updateCount();
+      } catch (err) {
+        console.error('Error loading meals:', err);
+      }
+    }
+
+    // 2. Search and display specific food
+    async function searchMeal() {
+      const query = document.getElementById('searchInput').value.trim();
+      try {
+        const response = await fetch(`${API_BASE}/search?q=${encodeURIComponent(query)}`);
+        const meals = await response.json();
+        renderMeals(meals);
+      } catch (err) {
+        console.error('Error searching meals:', err);
+      }
+    }
+
+    // Automatically load all meals on page load
+    window.onload = () => {
+      loadAllMeals();
+    };
+  </script>
+
+</body>
+</html>
